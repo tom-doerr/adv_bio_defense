@@ -24,7 +24,6 @@ def add_delta(x, layer_id, delta_dict, use_delta=True):
         return x
     if layer_id in delta_dict:
         delta = delta_dict[layer_id]
-        delta[0,0,0]
         return x + delta
 
     x_shape = x[0].shape
@@ -33,36 +32,60 @@ def add_delta(x, layer_id, delta_dict, use_delta=True):
     delta_dict[layer_id] = delta
     return add_delta(x, layer_id, delta_dict)
 
-# Network suitable for Imagnet that can handle images of different sizes..
 class Net(nn.Module):
     '''
     This class implements a Convolutional Neural Network on Imagenette.
     The network takes input images of resolution 224 x 224.
+    The network is big and contains multiple convolutional layers.
+    The network contains skip connections.
     '''
 
-    def __init__(self, use_delta):
+    def __init__(self, use_delta=False):
         super(Net, self).__init__()
-        self.conv1 = nn.Conv2d(3, 6, 5)
-        self.pool = nn.MaxPool2d(2, 2)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 53 * 53, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
-        self.delta_dict = {}
+
         self.use_delta = use_delta
+        self.delta_dict = {}
+
+        self.conv1 = nn.Conv2d(in_channels=3, out_channels=16, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(in_channels=16, out_channels=32, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1)
+
+        self.pool = nn.MaxPool2d(2, 2)
+        self.dropout = nn.Dropout(p=0.5)
+
+        self.fc1 = nn.Linear(128 * 28 * 28, 256)
+        self.fc2 = nn.Linear(256, 128)
+        self.fc3 = nn.Linear(128, 10)
 
     def forward(self, x):
         x = self.conv1(x)
-        x = add_delta(x, 0, self.delta_dict, use_delta=self.use_delta)
-        x = self.pool(F.relu(x))
+        x = add_delta(x, 'conv1', self.delta_dict, self.use_delta)
+        x = F.relu(x)
+        x = self.pool(x)
         x = self.conv2(x)
-        x = add_delta(x, 1, self.delta_dict, use_delta=self.use_delta)
-        x = self.pool(F.relu(x))
-        x = x.view(-1, 16 * 53 * 53)
+        x = add_delta(x, 'conv2', self.delta_dict, self.use_delta)
+        x = F.relu(x)
+        x = self.pool(x)
+        x = self.conv3(x)
+        x = add_delta(x, 'conv3', self.delta_dict, self.use_delta)
+        x = F.relu(x)
+        x = self.pool(x)
+        x = self.conv4(x)
+        x = add_delta(x, 'conv4', self.delta_dict, self.use_delta)
+        x = F.relu(x)
+
+        x = x.view(-1, 128 * 28 * 28)
+
         x = F.relu(self.fc1(x))
+        x = self.dropout(x)
         x = F.relu(self.fc2(x))
+        x = self.dropout(x)
         x = self.fc3(x)
+
         return x
+
+
 
 
 parser = argparse.ArgumentParser(description='Train a Pytorch model on Imagenette')

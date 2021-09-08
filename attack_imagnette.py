@@ -26,18 +26,17 @@ def eval_for_model(base_name):
 
     success_list  = []
     for i, (images, labels) in enumerate(test_data_loader):
-        if i % 10 == 0:
-            print(f'{i}/{len(test_data)}')
+        if i == 100:
+            break
 
-        images = images.cuda()[:32]
-        labels = labels.cuda()[:32]
+        images = images.cuda()
+        labels = labels.cuda()
 
-        total += len(images)
-
-        epsilons = np.logspace(-2, 0, 100)
+        epsilons = np.logspace(-2, 0, 10)
         _, advs, success = attack(fmodel, images, labels, epsilons=epsilons)
+        success = success.detach()
+        # detached_list = [e.detach() for e in list(itertools.chain.from_iterable(success))]
         success_list += list(itertools.chain.from_iterable(success))
-        break
 
     success = sum(success_list)
     total = len(success_list)
