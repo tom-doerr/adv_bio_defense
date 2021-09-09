@@ -32,7 +32,8 @@ def eval_for_model(base_name):
         images = images.cuda()
         labels = labels.cuda()
 
-        epsilons = np.logspace(-2, 0, 10)
+        # epsilons = np.logspace(-2, 0, 10)
+        epsilons = [0.01]
         _, advs, success = attack(fmodel, images, labels, epsilons=epsilons)
         success = success.detach()
         # detached_list = [e.detach() for e in list(itertools.chain.from_iterable(success))]
