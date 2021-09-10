@@ -19,6 +19,9 @@ from pathlib import Path
 
 import torch.nn.functional as F
 
+
+SAMPLE_FROM_NORMAL = True
+
 def add_delta(x, layer_id, delta_dict, use_delta=True):
     if not use_delta:
         return x
@@ -27,7 +30,10 @@ def add_delta(x, layer_id, delta_dict, use_delta=True):
         return x + delta
 
     x_shape = x[0].shape
-    delta = torch.rand(x_shape) * 1e-3
+    if SAMPLE_FROM_NORMAL:
+        delta = torch.normal(0, 0.1, size=x_shape)
+    else:
+        delta = torch.rand(x_shape) * 1e-3
     delta = delta.to(x.device)
     delta_dict[layer_id] = delta
     return add_delta(x, layer_id, delta_dict)
