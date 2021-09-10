@@ -20,16 +20,21 @@ from pathlib import Path
 import torch.nn.functional as F
 
 
-SAMPLE_FROM_NORMAL = True
+SAMPLE_FROM_NORMAL = False
+ALWAYS_ADD_NEW_RANDOM_NOISE = True
 
 def add_delta(x, layer_id, delta_dict, use_delta=True):
+    x_shape = x[0].shape
     if not use_delta:
         return x
     if layer_id in delta_dict:
         delta = delta_dict[layer_id]
+        if ALWAYS_ADD_NEW_RANDOM_NOISE:
+            delta2 = torch.rand(x_shape).to(x.device) * 1e-3
+            return x + delta + delta2
+
         return x + delta
 
-    x_shape = x[0].shape
     if SAMPLE_FROM_NORMAL:
         delta = torch.normal(0, 0.1, size=x_shape)
     else:
