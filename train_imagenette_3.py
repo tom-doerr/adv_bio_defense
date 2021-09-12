@@ -30,7 +30,7 @@ def add_delta(x, layer_id, delta_dict, use_delta=True):
     if layer_id in delta_dict:
         delta = delta_dict[layer_id]
         if ALWAYS_ADD_NEW_RANDOM_NOISE:
-            delta2 = torch.rand(x_shape).to(x.device) * 1e-3
+            delta2 = torch.rand(x_shape).to(x.device) * 1e-2
             return x + delta + delta2
 
         return x + delta
@@ -38,7 +38,7 @@ def add_delta(x, layer_id, delta_dict, use_delta=True):
     if SAMPLE_FROM_NORMAL:
         delta = torch.normal(0, 0.1, size=x_shape)
     else:
-        delta = torch.rand(x_shape) * 1e-3
+        delta = torch.rand(x_shape) * 1e-2
     delta = delta.to(x.device)
     delta_dict[layer_id] = delta
     return add_delta(x, layer_id, delta_dict)
